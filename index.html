@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#03C75A" />
+<title>네이버 광고 관리</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2303C75A'%3E%3Cpath d='M16.27 3H7.73A4.73 4.73 0 0 0 3 7.73v8.54A4.73 4.73 0 0 0 7.73 21h8.54A4.73 4.73 0 0 0 21 16.27V7.73A4.73 4.73 0 0 0 16.27 3zm-2.1 12.27h-2.4l-2.6-3.6v3.6H6.97V8.73h2.4l2.6 3.56V8.73h2.2v6.54z'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #F5F6FA; margin: 0; min-height: 100vh; font-family: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif; }
+  input::placeholder { color: #8892A699; }
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #E2E6EF; border-radius: 4px; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useCallback } = React;
+
+// ─── Light Theme ───
+const theme = {
+  bg: "#F5F6FA", surface: "#FFFFFF", surfaceLight: "#F0F2F7",
+  border: "#E2E6EF", accent: "#03C75A", accentDim: "rgba(3,199,90,0.08)",
+  accentGlow: "rgba(3,199,90,0.2)", accentDark: "#02A94C",
+  text: "#1A1D26", textDim: "#8892A6",
+  danger: "#E8384F", dangerDim: "rgba(232,56,79,0.08)",
+  warning: "#F5A623", warningDim: "rgba(245,166,35,0.1)",
+  blue: "#4285F4", blueDim: "rgba(66,133,244,0.08)",
+  cardShadow: "0 2px 16px rgba(0,0,0,0.06)",
+};
+
+// ─── Icons ───
+const I = {
+  eye: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>,
+  eyeOff: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
+  user: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  lock: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  mail: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+  key: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
+  settings: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
+  check: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
+  logout: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  server: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1" fill="currentColor"/><circle cx="6" cy="18" r="1" fill="currentColor"/></svg>,
+  shield: <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke={theme.accent} strokeWidth="1.3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4" stroke={theme.accent} strokeWidth="2"/></svg>,
+  naver: <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M16.27 3H7.73A4.73 4.73 0 0 0 3 7.73v8.54A4.73 4.73 0 0 0 7.73 21h8.54A4.73 4.73 0 0 0 21 16.27V7.73A4.73 4.73 0 0 0 16.27 3zm-2.1 12.27h-2.4l-2.6-3.6v3.6H6.97V8.73h2.4l2.6 3.56V8.73h2.2v6.54z"/></svg>,
+  back: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  campaign: <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
+  refresh: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
+  filter: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+  list: <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>,
+};
+
+// ─── Proxy Server API ───
+// ⚠️ 프록시 서버 URL — 배포 후 이 한 줄만 수정하세요
+//   배포 예시: "https://your-app.up.railway.app"
+const PRODUCTION_PROXY_URL = "https://naver-ad-proxy.lim5829.workers.dev";
+
+// 개발자용 백도어: 브라우저 콘솔에서 아래처럼 override 가능
+//   localStorage.setItem("__dev_proxy_url", "http://192.168.0.10:3001")
+//   localStorage.removeItem("__dev_proxy_url")  // 원래대로
+const PROXY_BASE = localStorage.getItem("__dev_proxy_url") || PRODUCTION_PROXY_URL;
+
+async function naverApiFetch({ method = "GET", path, customerId, apiKey, secretKey, managerLoginId, body }) {
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Customer-Id": customerId,
+    "X-Api-Key": apiKey,
+    "X-Secret-Key": secretKey,
+  };
+  if (managerLoginId) headers["X-Manager-Login-Id"] = managerLoginId;
+
+  const res = await fetch(`${PROXY_BASE}${path}`, {
+    method, headers, body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `API Error: ${res.status}`);
+  }
+  return res.json();
+}
+
+// ─── Background ───
+function SoftBG() {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
+      <div style={{ position: "absolute", top: "-25%", right: "-20%", width: "65vw", height: "65vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(3,199,90,0.07) 0%, transparent 65%)", animation: "driftA 22s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", bottom: "-20%", left: "-15%", width: "55vw", height: "55vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(66,133,244,0.05) 0%, transparent 65%)", animation: "driftB 28s ease-in-out infinite" }} />
+      <style>{`
+        @keyframes driftA { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-20px,30px)} }
+        @keyframes driftB { 0%,100%{transform:translate(0,0)} 50%{transform:translate(15px,-25px)} }
+      `}</style>
+    </div>
+  );
+}
+
+function Toast({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, []);
+  const c = type === "success" ? theme.accent : type === "error" ? theme.danger : theme.textDim;
+  return (
+    <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 9999, background: theme.surface, color: c, border: `1.5px solid ${c}33`, borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, boxShadow: `0 8px 30px rgba(0,0,0,0.1)`, animation: "popIn 0.3s ease" }}>
+      {message}
+      <style>{`@keyframes popIn { from{opacity:0;transform:translateX(-50%) translateY(-16px) scale(0.95)} to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} }`}</style>
+    </div>
+  );
+}
+
+function InputField({ icon, label, type = "text", value, onChange, placeholder, showToggle, mono }) {
+  const [focused, setFocused] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const actualType = showToggle ? (showPw ? "text" : "password") : type;
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: theme.textDim, marginBottom: 7, letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</label>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: theme.surfaceLight, border: `1.5px solid ${focused ? theme.accent : "transparent"}`, borderRadius: 12, padding: "0 14px", transition: "all 0.2s", boxShadow: focused ? `0 0 0 3px ${theme.accentGlow}` : "none" }}>
+        <span style={{ color: focused ? theme.accent : theme.textDim, transition: "color 0.2s", flexShrink: 0 }}>{icon}</span>
+        <input type={actualType} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: theme.text, fontSize: 15, padding: "14px 0", fontFamily: mono ? "'JetBrains Mono', monospace" : "inherit", letterSpacing: mono ? "0.02em" : "normal" }} />
+        {showToggle && <button onClick={() => setShowPw(!showPw)} style={{ background: "none", border: "none", color: theme.textDim, cursor: "pointer", padding: 4, display: "flex", flexShrink: 0 }}>{showPw ? I.eyeOff : I.eye}</button>}
+      </div>
+    </div>
+  );
+}
+
+function Button({ children, onClick, variant = "primary", loading, disabled, style: s }) {
+  const base = { width: "100%", padding: "15px 24px", borderRadius: 14, border: "none", fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.2s", opacity: disabled ? 0.45 : 1, fontWeight: 700 };
+  const v = {
+    primary: { background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentDark})`, color: "#fff", boxShadow: `0 4px 16px ${theme.accentGlow}` },
+    secondary: { background: theme.surfaceLight, color: theme.text, border: `1.5px solid ${theme.border}` },
+  };
+  return (
+    <button onClick={onClick} disabled={disabled || loading} style={{ ...base, ...v[variant], ...s }}>
+      {loading ? <span style={{ display: "inline-block", width: 18, height: 18, border: "2.5px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : children}
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </button>
+  );
+}
+
+function Card({ children, style }) {
+  return <div style={{ background: theme.surface, borderRadius: 18, border: `1px solid ${theme.border}`, padding: 24, boxShadow: theme.cardShadow, ...style }}>{children}</div>;
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    ELIGIBLE: { label: "활성", color: theme.accent, bg: theme.accentDim },
+    PAUSED: { label: "일시중지", color: theme.warning, bg: theme.warningDim },
+    OFF: { label: "중지", color: theme.danger, bg: theme.dangerDim },
+    PENDING: { label: "대기", color: theme.blue, bg: theme.blueDim },
+    DELETED: { label: "삭제됨", color: theme.textDim, bg: theme.surfaceLight },
+  };
+  const s = map[status] || map.OFF;
+  return (
+    <span style={{ fontSize: 11, fontWeight: 700, color: s.color, background: s.bg, padding: "3px 10px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.color, display: "inline-block" }} />
+      {s.label}
+    </span>
+  );
+}
+
+function TypeBadge({ type }) {
+  const labels = { WEB_SITE: "파워링크", SHOPPING: "쇼핑검색", BRAND_SEARCH: "브랜드검색", POWER_CONTENTS: "파워컨텐츠", CATALOG: "카탈로그", PERFORMANCE_MAX: "퍼포먼스 맥스" };
+  return (
+    <span style={{ fontSize: 10, fontWeight: 600, color: theme.textDim, background: theme.surfaceLight, padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+      {labels[type] || type}
+    </span>
+  );
+}
+
+function fmtNum(n) {
+  if (n == null) return "-";
+  return Number(n).toLocaleString("ko-KR");
+}
+
+// ─── Login ───
+function LoginPage({ onLogin, onGoSignup }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    if (!email || !password) { setError("이메일과 비밀번호를 입력하세요"); return; }
+    setLoading(true); setError("");
+    await new Promise(r => setTimeout(r, 600));
+    const users = JSON.parse(localStorage.getItem("naver-ad-users") || "[]");
+    const user = users.find(u => u.email === email && u.password === password);
+    if (user) onLogin(user); else setError("이메일 또는 비밀번호가 일치하지 않습니다");
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "24px 20px" }}>
+      <div style={{ textAlign: "center", marginBottom: 44 }}>
+        <div style={{ width: 76, height: 76, borderRadius: 22, margin: "0 auto 20px", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 8px 28px ${theme.accentGlow}` }}>{I.naver}</div>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: theme.text, margin: 0 }}>네이버 광고 관리</h1>
+        <p style={{ color: theme.textDim, fontSize: 14, marginTop: 8, fontWeight: 500 }}>Naver Search Ad Manager</p>
+      </div>
+      <Card>
+        <InputField icon={I.mail} label="이메일" type="email" value={email} onChange={setEmail} placeholder="your@email.com" />
+        <InputField icon={I.lock} label="비밀번호" value={password} onChange={setPassword} placeholder="••••••••" showToggle />
+        {error && <p style={{ color: theme.danger, fontSize: 13, margin: "0 0 14px", padding: "10px 14px", background: theme.dangerDim, borderRadius: 10, fontWeight: 600 }}>{error}</p>}
+        <Button onClick={handleLogin} loading={loading}>로그인</Button>
+      </Card>
+      <p style={{ textAlign: "center", marginTop: 28, color: theme.textDim, fontSize: 14 }}>계정이 없으신가요? <span onClick={onGoSignup} style={{ color: theme.accent, cursor: "pointer", fontWeight: 700 }}>회원가입</span></p>
+    </div>
+  );
+}
+
+// ─── Signup ───
+function SignupPage({ onSignup, onGoLogin }) {
+  const [name, setName] = useState(""); const [email, setEmail] = useState("");
+  const [password, setPassword] = useState(""); const [confirmPw, setConfirmPw] = useState("");
+  const [loading, setLoading] = useState(false); const [error, setError] = useState("");
+
+  const validate = () => {
+    if (!name.trim()) return "이름을 입력하세요";
+    if (!email.includes("@")) return "올바른 이메일 형식이 아닙니다";
+    if (password.length < 6) return "비밀번호는 6자 이상이어야 합니다";
+    if (password !== confirmPw) return "비밀번호가 일치하지 않습니다";
+    return null;
+  };
+
+  const handleSignup = async () => {
+    const err = validate(); if (err) { setError(err); return; }
+    setLoading(true); setError("");
+    await new Promise(r => setTimeout(r, 800));
+    const users = JSON.parse(localStorage.getItem("naver-ad-users") || "[]");
+    if (users.find(u => u.email === email)) { setError("이미 등록된 이메일입니다"); setLoading(false); return; }
+    const newUser = { id: Date.now(), name, email, password, createdAt: new Date().toISOString() };
+    users.push(newUser);
+    localStorage.setItem("naver-ad-users", JSON.stringify(users));
+    onSignup(newUser); setLoading(false);
+  };
+
+  const pwS = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
+  const sC = ["transparent", theme.danger, theme.warning, theme.accent];
+  const sL = ["", "약함", "보통", "강함"];
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "24px 20px" }}>
+      <div style={{ textAlign: "center", marginBottom: 32 }}>
+        <div style={{ width: 76, height: 76, borderRadius: 22, margin: "0 auto 20px", background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 8px 28px ${theme.accentGlow}` }}>{I.naver}</div>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: theme.text, margin: 0 }}>회원가입</h1>
+        <p style={{ color: theme.textDim, fontSize: 14, marginTop: 8, fontWeight: 500 }}>새로운 계정을 만들어 보세요</p>
+      </div>
+      <Card>
+        <InputField icon={I.user} label="이름" value={name} onChange={setName} placeholder="홍길동" />
+        <InputField icon={I.mail} label="이메일" type="email" value={email} onChange={setEmail} placeholder="your@email.com" />
+        <InputField icon={I.lock} label="비밀번호" value={password} onChange={setPassword} placeholder="6자 이상 입력" showToggle />
+        {password && (
+          <div style={{ marginTop: -10, marginBottom: 18 }}>
+            <div style={{ display: "flex", gap: 4, marginBottom: 5 }}>{[1,2,3].map(i => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= pwS ? sC[pwS] : theme.border, transition: "all 0.3s" }} />)}</div>
+            <span style={{ fontSize: 11, color: sC[pwS], fontWeight: 700 }}>{sL[pwS]}</span>
+          </div>
+        )}
+        <InputField icon={I.lock} label="비밀번호 확인" value={confirmPw} onChange={setConfirmPw} placeholder="비밀번호를 다시 입력" showToggle />
+        {error && <p style={{ color: theme.danger, fontSize: 13, margin: "0 0 14px", padding: "10px 14px", background: theme.dangerDim, borderRadius: 10, fontWeight: 600 }}>{error}</p>}
+        <Button onClick={handleSignup} loading={loading}>계정 만들기</Button>
+      </Card>
+      <p style={{ textAlign: "center", marginTop: 28, color: theme.textDim, fontSize: 14 }}>이미 계정이 있으신가요? <span onClick={onGoLogin} style={{ color: theme.accent, cursor: "pointer", fontWeight: 700 }}>로그인</span></p>
+    </div>
+  );
+}
+
+// ─── API Settings ───
+function ApiSettingsPage({ user, onLogout, onSave, onGoCampaigns, apiSettings }) {
+  const [customerId, setCustomerId] = useState(apiSettings?.customerId || "");
+  const [apiKey, setApiKey] = useState(apiSettings?.apiKey || "");
+  const [secretKey, setSecretKey] = useState(apiSettings?.secretKey || "");
+  const [managerLoginId, setManagerLoginId] = useState(apiSettings?.managerLoginId || "");
+  const [saved, setSaved] = useState(!!apiSettings?.customerId);
+  const [loading, setLoading] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  const handleSave = async () => {
+    if (!customerId || !apiKey || !secretKey) return;
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 400));
+    const settings = { customerId, apiKey, secretKey, managerLoginId, savedAt: new Date().toISOString() };
+    localStorage.setItem(`naver-ad-api-settings-${user.id}`, JSON.stringify(settings));
+    setSaved(true); setLoading(false); onSave?.(settings);
+  };
+
+  const handleTest = async () => {
+    setTestResult(null); setLoading(true);
+    try {
+      const result = await naverApiFetch({ method: "POST", path: "/api/test-connection", customerId, apiKey, secretKey, managerLoginId });
+      setTestResult({ success: true, message: `API 연결 성공! 캠페인 ${result.campaignCount || 0}개 확인` });
+    } catch (e) {
+      setTestResult({ success: false, message: `연결 실패: ${e.message}` });
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", padding: "0 20px 40px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0 16px", position: "sticky", top: 0, zIndex: 10, background: `linear-gradient(${theme.bg}, ${theme.bg}ee)`, backdropFilter: "blur(12px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 12px ${theme.accentGlow}` }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M16.27 3H7.73A4.73 4.73 0 0 0 3 7.73v8.54A4.73 4.73 0 0 0 7.73 21h8.54A4.73 4.73 0 0 0 21 16.27V7.73A4.73 4.73 0 0 0 16.27 3zm-2.1 12.27h-2.4l-2.6-3.6v3.6H6.97V8.73h2.4l2.6 3.56V8.73h2.2v6.54z"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: theme.text }}>{user.name}</div>
+            <div style={{ fontSize: 11, color: theme.textDim, fontWeight: 500 }}>{user.email}</div>
+          </div>
+        </div>
+        <button onClick={onLogout} style={{ background: theme.surface, border: `1.5px solid ${theme.border}`, borderRadius: 12, padding: "8px 16px", color: theme.textDim, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, boxShadow: theme.cardShadow }}>{I.logout} <span>로그아웃</span></button>
+      </div>
+
+      <div style={{ margin: "8px 0 24px" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: theme.text, margin: 0, display: "flex", alignItems: "center", gap: 10 }}><span style={{ color: theme.accent }}>{I.settings}</span><span>API 설정</span></h1>
+        <p style={{ color: theme.textDim, fontSize: 13, marginTop: 6, lineHeight: 1.5, fontWeight: 500 }}>네이버 검색광고 API 인증 정보를 설정하세요</p>
+      </div>
+
+      <Card style={{ marginBottom: 20, padding: 16, background: `linear-gradient(135deg, ${theme.accentDim}, rgba(3,199,90,0.03))`, border: `1px solid ${theme.accent}18` }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+          {I.shield}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: theme.accentDark, marginBottom: 4 }}>보안 안내</div>
+            <div style={{ fontSize: 12, color: theme.textDim, lineHeight: 1.6, fontWeight: 500 }}>API 키는 프록시 서버를 통해 안전하게 전송됩니다.</div>
+          </div>
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: theme.accent }}>{I.server}</span><span>인증 정보</span>
+          {saved && <span style={{ marginLeft: "auto", fontSize: 11, color: theme.accent, fontWeight: 700, background: theme.accentDim, padding: "4px 12px", borderRadius: 20, display: "flex", alignItems: "center", gap: 4 }}>{I.check} 저장됨</span>}
+        </div>
+        <InputField icon={I.user} label="CUSTOMER ID" value={customerId} onChange={v => { setCustomerId(v); setSaved(false); }} placeholder="네이버 광고 고객 ID" mono />
+        <InputField icon={I.key} label="API KEY" value={apiKey} onChange={v => { setApiKey(v); setSaved(false); }} placeholder="API 액세스 키" mono />
+        <InputField icon={I.lock} label="SECRET KEY" value={secretKey} onChange={v => { setSecretKey(v); setSaved(false); }} placeholder="API 시크릿 키" showToggle mono />
+        <InputField icon={I.mail} label="MANAGER LOGIN ID (선택)" value={managerLoginId} onChange={v => { setManagerLoginId(v); setSaved(false); }} placeholder="위탁 관리 시 입력" mono />
+      </Card>
+
+      {testResult && (
+        <Card style={{ marginBottom: 16, padding: 16, background: testResult.success ? theme.accentDim : theme.dangerDim, border: `1.5px solid ${testResult.success ? theme.accent : theme.danger}22` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ color: testResult.success ? theme.accent : theme.danger }}>{testResult.success ? I.check : "⚠️"}</span>
+            <span style={{ fontSize: 13, color: testResult.success ? theme.accentDark : theme.danger, fontWeight: 700 }}>{testResult.message}</span>
+          </div>
+        </Card>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <Button onClick={handleSave} loading={loading} disabled={!customerId || !apiKey || !secretKey}>{I.check} 설정 저장</Button>
+        <Button onClick={handleTest} variant="secondary" loading={loading} disabled={!customerId || !apiKey || !secretKey}>{I.server} API 연결 테스트</Button>
+        {saved && <Button onClick={onGoCampaigns} variant="secondary">{I.campaign} 캠페인 관리</Button>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Campaign Card ───
+function CampaignCard({ campaign, style }) {
+  const c = campaign;
+  return (
+    <Card style={{ padding: 16, marginBottom: 12, animation: "fadeUp 0.3s ease", ...style }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        <div style={{ flex: 1, marginRight: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, marginBottom: 6, lineHeight: 1.3 }}>{c.name}</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <StatusBadge status={c.userStatus || c.status} />
+            <TypeBadge type={c.campaignTp} />
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
+        <div style={{ background: theme.surfaceLight, borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: theme.textDim, fontWeight: 600, marginBottom: 4 }}>일예산</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: theme.text }}>{c.dailyBudget ? `${fmtNum(c.dailyBudget)}원` : "무제한"}</div>
+        </div>
+        <div style={{ background: theme.surfaceLight, borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: theme.textDim, fontWeight: 600, marginBottom: 4 }}>입찰전략</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>{c.bidStrategy === "MANUAL" ? "수동" : c.bidStrategy === "AUTO" ? "자동" : c.bidStrategy || "-"}</div>
+        </div>
+        <div style={{ background: theme.surfaceLight, borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+          <div style={{ fontSize: 10, color: theme.textDim, fontWeight: 600, marginBottom: 4 }}>상태</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: c.deliveryStatus === "ELIGIBLE" ? theme.accent : theme.textDim }}>{c.deliveryStatus === "ELIGIBLE" ? "게재중" : c.deliveryStatus || "-"}</div>
+        </div>
+      </div>
+      <style>{`@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }`}</style>
+    </Card>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <Card style={{ padding: 16, marginBottom: 12 }}>
+      <div style={{ height: 18, width: "70%", background: theme.surfaceLight, borderRadius: 8, marginBottom: 10, animation: "pulse 1.5s ease-in-out infinite" }} />
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        <div style={{ height: 22, width: 60, background: theme.surfaceLight, borderRadius: 20, animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div style={{ height: 22, width: 70, background: theme.surfaceLight, borderRadius: 6, animation: "pulse 1.5s ease-in-out infinite" }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        {[1,2,3].map(i => <div key={i} style={{ height: 52, background: theme.surfaceLight, borderRadius: 10, animation: "pulse 1.5s ease-in-out infinite" }} />)}
+      </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+    </Card>
+  );
+}
+
+// ─── Campaigns Page ───
+function CampaignsPage({ user, apiSettings, onBack, onLogout, showToast }) {
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchCampaigns = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
+    setError("");
+    try {
+      const data = await naverApiFetch({
+        path: "/api/campaigns",
+        customerId: apiSettings.customerId,
+        apiKey: apiSettings.apiKey,
+        secretKey: apiSettings.secretKey,
+        managerLoginId: apiSettings.managerLoginId,
+      });
+      setCampaigns(Array.isArray(data) ? data : []);
+      if (isRefresh) showToast("캠페인 목록을 새로고침했습니다");
+    } catch (e) {
+      setError(`캠페인을 불러올 수 없습니다: ${e.message}`);
+    }
+    setLoading(false); setRefreshing(false);
+  }, [apiSettings, showToast]);
+
+  useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+
+  const activeCampaigns = campaigns.filter(c => (c.userStatus || c.status) === "ELIGIBLE");
+  const inactiveCampaigns = campaigns.filter(c => (c.userStatus || c.status) !== "ELIGIBLE");
+  const displayCampaigns = showAll ? campaigns : activeCampaigns;
+
+  return (
+    <div style={{ minHeight: "100vh", padding: "0 20px 40px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 0 16px", position: "sticky", top: 0, zIndex: 10, background: `linear-gradient(${theme.bg}, ${theme.bg}ee)`, backdropFilter: "blur(12px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={onBack} style={{ background: theme.surface, border: `1.5px solid ${theme.border}`, borderRadius: 10, width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.text, boxShadow: theme.cardShadow }}>{I.back}</button>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: theme.text }}>캠페인</div>
+            <div style={{ fontSize: 11, color: theme.textDim, fontWeight: 500 }}>{user.name}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => fetchCampaigns(true)} disabled={refreshing} style={{ background: theme.surface, border: `1.5px solid ${theme.border}`, borderRadius: 10, width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.accent, boxShadow: theme.cardShadow, transition: "transform 0.3s", transform: refreshing ? "rotate(360deg)" : "none" }}>{I.refresh}</button>
+          <button onClick={onLogout} style={{ background: theme.surface, border: `1.5px solid ${theme.border}`, borderRadius: 10, width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: theme.textDim, boxShadow: theme.cardShadow }}>{I.logout}</button>
+        </div>
+      </div>
+
+      {!loading && !error && campaigns.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+          <Card style={{ padding: "14px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: theme.textDim, fontWeight: 600, marginBottom: 4 }}>전체</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: theme.text }}>{campaigns.length}</div>
+          </Card>
+          <Card style={{ padding: "14px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: theme.accent, fontWeight: 600, marginBottom: 4 }}>활성</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: theme.accent }}>{activeCampaigns.length}</div>
+          </Card>
+          <Card style={{ padding: "14px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: theme.textDim, fontWeight: 600, marginBottom: 4 }}>비활성</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: theme.textDim }}>{inactiveCampaigns.length}</div>
+          </Card>
+        </div>
+      )}
+
+      {!loading && !error && campaigns.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: theme.text, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ color: theme.accent }}>{showAll ? I.list : I.filter}</span>
+            {showAll ? "전체 캠페인" : "활성 캠페인만"}
+            <span style={{ fontSize: 12, color: theme.textDim, fontWeight: 600 }}>({displayCampaigns.length})</span>
+          </div>
+          <button onClick={() => setShowAll(!showAll)} style={{ background: showAll ? theme.accentDim : theme.surfaceLight, border: `1.5px solid ${showAll ? theme.accent + "33" : theme.border}`, borderRadius: 20, padding: "7px 16px", fontSize: 12, fontWeight: 700, color: showAll ? theme.accent : theme.textDim, cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 5 }}>
+            {showAll ? <>{I.filter} 활성만 보기</> : <>{I.list} 전체 보기</>}
+          </button>
+        </div>
+      )}
+
+      {loading && <div><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>}
+
+      {error && (
+        <Card style={{ padding: 20, textAlign: "center" }}>
+          <div style={{ fontSize: 30, marginBottom: 10 }}>⚠️</div>
+          <div style={{ fontSize: 14, color: theme.danger, fontWeight: 600, marginBottom: 6 }}>연결 오류</div>
+          <div style={{ fontSize: 12, color: theme.textDim, marginBottom: 16, lineHeight: 1.5 }}>{error}<br/>프록시 서버가 실행 중인지 확인하세요.</div>
+          <Button onClick={() => fetchCampaigns()} variant="secondary">다시 시도</Button>
+        </Card>
+      )}
+
+      {!loading && !error && displayCampaigns.length === 0 && (
+        <Card style={{ padding: 40, textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: theme.text, marginBottom: 6 }}>{showAll ? "캠페인이 없습니다" : "활성 캠페인이 없습니다"}</div>
+          <div style={{ fontSize: 13, color: theme.textDim, marginBottom: 16 }}>{showAll ? "네이버 검색광고에서 캠페인을 생성해주세요" : "현재 게재 중인 캠페인이 없습니다"}</div>
+          {!showAll && inactiveCampaigns.length > 0 && (
+            <Button onClick={() => setShowAll(true)} variant="secondary" style={{ width: "auto", padding: "10px 20px", margin: "0 auto" }}>{I.list} 전체 캠페인 보기 ({inactiveCampaigns.length}개)</Button>
+          )}
+        </Card>
+      )}
+
+      {!loading && !error && displayCampaigns.map((c, i) => (
+        <CampaignCard key={c.nccCampaignId || i} campaign={c} style={{ animationDelay: `${i * 0.05}s` }} />
+      ))}
+    </div>
+  );
+}
+
+// ─── App ───
+function App() {
+  const [page, setPage] = useState("login");
+  const [user, setUser] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [apiSettings, setApiSettings] = useState(null);
+
+  const showToast = useCallback((message, type = "success") => setToast({ message, type }), []);
+
+  useEffect(() => {
+    if (user) {
+      const data = localStorage.getItem(`naver-ad-api-settings-${user.id}`);
+      if (data) setApiSettings(JSON.parse(data));
+    }
+  }, [user]);
+
+  return (
+    <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: theme.bg, color: theme.text, position: "relative" }}>
+      <SoftBG />
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {page === "login" && <LoginPage onLogin={u => { setUser(u); setPage("settings"); showToast(`${u.name}님 환영합니다!`); }} onGoSignup={() => setPage("signup")} />}
+        {page === "signup" && <SignupPage onSignup={u => { setUser(u); setPage("settings"); showToast("회원가입이 완료되었습니다!"); }} onGoLogin={() => setPage("login")} />}
+        {page === "settings" && user && <ApiSettingsPage user={user} apiSettings={apiSettings} onLogout={() => { setUser(null); setApiSettings(null); setPage("login"); showToast("로그아웃 되었습니다", "info"); }} onSave={s => { setApiSettings(s); showToast("API 설정이 저장되었습니다!"); }} onGoCampaigns={() => setPage("campaigns")} />}
+        {page === "campaigns" && user && apiSettings && <CampaignsPage user={user} apiSettings={apiSettings} onBack={() => setPage("settings")} onLogout={() => { setUser(null); setApiSettings(null); setPage("login"); showToast("로그아웃 되었습니다", "info"); }} showToast={showToast} />}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
