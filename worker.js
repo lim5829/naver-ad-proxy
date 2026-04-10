@@ -168,6 +168,30 @@ export default {
         return jsonResponse(result.data, result.status);
       }
 
+      // ─── 광고그룹 입찰가 수정 ───
+      const adgroupBidMatch = path.match(/^\/api\/adgroups\/([^/]+)\/bid$/);
+      if (adgroupBidMatch && request.method === "PUT") {
+        const body = await request.json();
+        const result = await callNaverApi({
+          method: "PUT",
+          path: `/ncc/adgroups/${adgroupBidMatch[1]}?fields=bidAmt`,
+          ...auth,
+          body: { bidAmt: body.bidAmt },
+        });
+        return jsonResponse(result.data, result.status);
+      }
+
+      // ─── 광고그룹 상세 조회 ───
+      const adgroupDetailMatch = path.match(/^\/api\/adgroups\/([^/]+)$/);
+      if (adgroupDetailMatch && request.method === "GET") {
+        const result = await callNaverApi({
+          method: "GET",
+          path: `/ncc/adgroups/${adgroupDetailMatch[1]}`,
+          ...auth,
+        });
+        return jsonResponse(result.data, result.status);
+      }
+
       // ─── 키워드 목록 ───
       if (path === "/api/keywords" && request.method === "GET") {
         const adgroupId = url.searchParams.get("adgroupId");
