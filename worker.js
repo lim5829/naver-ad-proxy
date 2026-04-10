@@ -213,7 +213,7 @@ export default {
         return jsonResponse(result.data, result.status);
       }
 
-      // ─── 통계 리포트 ───
+      // ─── 통계 리포트 (POST body) ───
       if (path === "/api/stats" && request.method === "POST") {
         const body = await request.json();
         const result = await callNaverApi({
@@ -221,6 +221,46 @@ export default {
           path: "/stats",
           ...auth,
           body,
+        });
+        return jsonResponse(result.data, result.status);
+      }
+
+      // ─── 통계 요약 (GET with query params) ───
+      if (path === "/api/stats-summary" && request.method === "GET") {
+        const ids = url.searchParams.get("ids");
+        const datePreset = url.searchParams.get("datePreset") || "today";
+        const fields = url.searchParams.get("fields") || '["clkCnt","impCnt","salesAmt","cpc","ctr"]';
+        
+        if (!ids) {
+          return jsonResponse({ error: "ids parameter is required" }, 400);
+        }
+
+        const statsPath = `/stats?ids=${encodeURIComponent(ids)}&fields=${encodeURIComponent(fields)}&datePreset=${datePreset}`;
+        const result = await callNaverApi({
+          method: "GET",
+          path: statsPath,
+          ...auth,
+        });
+        return jsonResponse(result.data, result.status);
+      }
+
+      // ─── 통계 요약 (날짜 범위) ───
+      if (path === "/api/stats-range" && request.method === "GET") {
+        const ids = url.searchParams.get("ids");
+        const since = url.searchParams.get("since");
+        const until = url.searchParams.get("until");
+        const fields = url.searchParams.get("fields") || '["clkCnt","impCnt","salesAmt","cpc","ctr"]';
+        
+        if (!ids || !since || !until) {
+          return jsonResponse({ error: "ids, since, until parameters are required" }, 400);
+        }
+
+        const timeRange = JSON.stringify({ since, until });
+        const statsPath = `/stats?ids=${encodeURIComponent(ids)}&fields=${encodeURIComponent(fields)}&timeRange=${encodeURIComponent(timeRange)}`;
+        const result = await callNaverApi({
+          method: "GET",
+          path: statsPath,
+          ...auth,
         });
         return jsonResponse(result.data, result.status);
       }
