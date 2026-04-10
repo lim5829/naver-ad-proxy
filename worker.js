@@ -41,7 +41,10 @@ async function generateSignature(timestamp, method, uri, secretKey) {
 // ─── 네이버 API 호출 ───
 async function callNaverApi({ method, path, customerId, apiKey, secretKey, managerLoginId, body }) {
   const timestamp = Date.now().toString();
-  const signature = await generateSignature(timestamp, method, path, secretKey);
+  
+  // 서명은 query string 제외한 path만 사용
+  const pathOnly = path.split("?")[0];
+  const signature = await generateSignature(timestamp, method, pathOnly, secretKey);
 
   const headers = {
     "Content-Type": "application/json; charset=UTF-8",
