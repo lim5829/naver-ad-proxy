@@ -171,12 +171,16 @@ export default {
       // ─── 광고그룹 입찰가 수정 ───
       const adgroupBidMatch = path.match(/^\/api\/adgroups\/([^/]+)\/bid$/);
       if (adgroupBidMatch && request.method === "PUT") {
+        const adgroupId = adgroupBidMatch[1];
         const body = await request.json();
         const result = await callNaverApi({
           method: "PUT",
-          path: `/ncc/adgroups/${adgroupBidMatch[1]}?fields=bidAmt`,
+          path: `/ncc/adgroups/${adgroupId}?fields=bidAmt`,
           ...auth,
-          body: { bidAmt: body.bidAmt },
+          body: { 
+            nccAdgroupId: adgroupId,
+            bidAmt: body.bidAmt 
+          },
         });
         return jsonResponse(result.data, result.status);
       }
