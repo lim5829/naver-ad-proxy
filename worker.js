@@ -91,7 +91,7 @@ function extractAuth(request) {
 
 // ─── 메인 핸들러 ───
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -105,7 +105,106 @@ export default {
       return jsonResponse({ status: "ok", timestamp: new Date().toISOString() });
     }
 
-    // ─── /api/* 라우트는 인증 필요 ───
+    // ─── 회원 인증 (KV 기반, 네이버 API 인증 불필요) ───
+    if (path === "/api/auth/signup" && request.method === "POST") {
+      try {
+        const { name, email, password } = await request.json();
+        if (!name || !email || !password) return jsonResponse({ error: "이름, 이메일, 비밀번호를 입력하세요" }, 400);
+        if (password.length < 6) return jsonResponse({ error: "비밀번호는 6자 이상이어야 합니다" }, 400);
+
+        // 이메일 중복 확인
+        const existing = await env.USERS.get(`user:${email}`);
+        if (existing) return jsonResponse({ error: "이미 등록된 이메일입니다" }, 409);
+
+        const user = {
+          id: Date.now(),
+          name, email, password,
+          isAdmin: email === "lim5829" || email === "lim5829@naver.com",
+          createdAt: new Date().toISOString(),
+        };
+
+        await env.USERS.put(`user:${email}`, JSON.stringify(user));
+
+        // 유저 목록 인덱스 업데이트
+        const indexRaw = await env.USERS.get("user-index");
+        const index = indexRaw ? JSON.parse(indexRaw) : [];
+        index.push(email);
+        await env.USERS.put("user-index", JSON.stringify(index));
+
+        const { password: _, ...safeUser } = user;
+        return jsonResponse({ success: true, user: safeUser });
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    if (path === "/api/auth/login" && request.method === "POST") {
+      try {
+        const { email, password } = await request.json();
+        if (!email || !password) return jsonResponse({ error: "이메일과 비밀번호를 입력하세요" }, 400);
+
+        const raw = await env.USERS.get(`user:${email}`);
+        if (!raw) return jsonResponse({ error: "이메일 또는 비밀번호가 일치하지 않습니다" }, 401);
+
+        const user = JSON.parse(raw);
+        if (user.password !== password) return jsonResponse({ error: "이메일 또는 비밀번호가 일치하지 않습니다" }, 401);
+
+        const { password: _, ...safeUser } = user;
+        return jsonResponse({ success: true, user: safeUser });
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    if (path === "/api/auth/users" && request.method === "GET") {
+      try {
+        const indexRaw = await env.USERS.get("user-index");
+        const index = indexRaw ? JSON.parse(indexRaw) : [];
+        const users = [];
+        for (const email of index) {
+          const raw = await env.USERS.get(`user:${email}`);
+          if (raw) {
+            const u = JSON.parse(raw);
+            const { password: _, ...safeUser } = u;
+            users.push(safeUser);
+          }
+        }
+        return jsonResponse(users);
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    if (path === "/api/auth/user/delete" && request.method === "POST") {
+      try {
+        const { email } = await request.json();
+        await env.USERS.delete(`user:${email}`);
+        const indexRaw = await env.USERS.get("user-index");
+        const index = indexRaw ? JSON.parse(indexRaw) : [];
+        await env.USERS.put("user-index", JSON.stringify(index.filter(e => e !== email)));
+        return jsonResponse({ success: true });
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    if (path === "/api/auth/user/update" && request.method === "POST") {
+      try {
+        const { email, password, isAdmin } = await request.json();
+        const raw = await env.USERS.get(`user:${email}`);
+        if (!raw) return jsonResponse({ error: "유저를 찾을 수 없습니다" }, 404);
+        const user = JSON.parse(raw);
+        if (password !== undefined) user.password = password;
+        if (isAdmin !== undefined) user.isAdmin = isAdmin;
+        await env.USERS.put(`user:${email}`, JSON.stringify(user));
+        const { password: _, ...safeUser } = user;
+        return jsonResponse({ success: true, user: safeUser });
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    // ─── /api/* 그 외 라우트는 네이버 API 인증 필요 ───
     if (!path.startsWith("/api/")) {
       return jsonResponse({ error: "Not found" }, 404);
     }
