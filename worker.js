@@ -265,6 +265,21 @@ export default {
         return jsonResponse(result.data, result.status);
       }
 
+      // ─── 키워드 도구 (검색량/경쟁도 조회) ───
+      if (path === "/api/keywordstool" && request.method === "GET") {
+        const hintKeywords = url.searchParams.get("hintKeywords");
+        const showDetail = url.searchParams.get("showDetail") || "1";
+        if (!hintKeywords) {
+          return jsonResponse({ error: "hintKeywords parameter is required" }, 400);
+        }
+        const result = await callNaverApi({
+          method: "GET",
+          path: `/keywordstool?hintKeywords=${encodeURIComponent(hintKeywords)}&showDetail=${showDetail}`,
+          ...auth,
+        });
+        return jsonResponse(result.data, result.status);
+      }
+
       // ─── 광고주 정보 ───
       if (path === "/api/customer" && request.method === "GET") {
         const result = await callNaverApi({ method: "GET", path: "/customers", ...auth });
