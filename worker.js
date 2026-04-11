@@ -1,4 +1,4 @@
-// rebuild with KV binding
+
 
 /**
  * 네이버 검색광고 API 프록시 — Cloudflare Workers
