@@ -1,5 +1,3 @@
-// KV rebuild trigger
-
 /**
  * 네이버 검색광고 API 프록시 — Cloudflare Workers
  * 
@@ -201,6 +199,31 @@ export default {
         await env.USERS.put(`user:${email}`, JSON.stringify(user));
         const { password: _, ...safeUser } = user;
         return jsonResponse({ success: true, user: safeUser });
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    // ─── API 설정 저장 (KV) ───
+    if (path === "/api/auth/api-settings" && request.method === "POST") {
+      try {
+        const { email, settings } = await request.json();
+        if (!email || !settings) return jsonResponse({ error: "email과 settings가 필요합니다" }, 400);
+        await env.USERS.put(`api-settings:${email}`, JSON.stringify(settings));
+        return jsonResponse({ success: true });
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 500);
+      }
+    }
+
+    // ─── API 설정 로드 (KV) ───
+    if (path === "/api/auth/api-settings" && request.method === "GET") {
+      try {
+        const email = url.searchParams.get("email");
+        if (!email) return jsonResponse({ error: "email 파라미터가 필요합니다" }, 400);
+        const raw = await env.USERS.get(`api-settings:${email}`);
+        if (!raw) return jsonResponse(null);
+        return jsonResponse(JSON.parse(raw));
       } catch (e) {
         return jsonResponse({ error: e.message }, 500);
       }
@@ -419,5 +442,3 @@ export default {
     }
   },
 };
-
-
