@@ -193,14 +193,22 @@ export default {
       if (adgroupBudgetMatch && request.method === "PUT") {
         const adgroupId = adgroupBudgetMatch[1];
         const body = await request.json();
+        // 먼저 현재 광고그룹 정보 조회
+        const current = await callNaverApi({
+          method: "GET",
+          path: `/ncc/adgroups/${adgroupId}`,
+          ...auth,
+        });
+        if (current.status >= 400) {
+          return jsonResponse(current.data, current.status);
+        }
+        // dailyBudget만 변경하여 PUT
+        const updateBody = { ...current.data, dailyBudget: body.dailyBudget };
         const result = await callNaverApi({
           method: "PUT",
-          path: `/ncc/adgroups/${adgroupId}?fields=dailyBudget`,
+          path: `/ncc/adgroups/${adgroupId}`,
           ...auth,
-          body: { 
-            nccAdgroupId: adgroupId,
-            dailyBudget: body.dailyBudget 
-          },
+          body: updateBody,
         });
         return jsonResponse(result.data, result.status);
       }
