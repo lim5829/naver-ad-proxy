@@ -1,6 +1,7 @@
 name = "naver-ad-proxy"
 main = "worker.js"
-compatibility_date = "2025-01-01"
+compatibility_date = "2024-01-01"
 
-# 무료 플랜 사용 (월 10만 요청)
-# workers_dev = true 면 자동으로 https://naver-ad-proxy.<your-account>.workers.dev 도메인 생성
+[[kv_namespaces]]
+binding = "USERS"
+id = "0978be97943846d98f46290390d49c24"
