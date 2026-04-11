@@ -188,6 +188,23 @@ export default {
         return jsonResponse(result.data, result.status);
       }
 
+      // ─── 광고그룹 하루예산 수정 ───
+      const adgroupBudgetMatch = path.match(/^\/api\/adgroups\/([^/]+)\/budget$/);
+      if (adgroupBudgetMatch && request.method === "PUT") {
+        const adgroupId = adgroupBudgetMatch[1];
+        const body = await request.json();
+        const result = await callNaverApi({
+          method: "PUT",
+          path: `/ncc/adgroups/${adgroupId}?fields=dailyBudget`,
+          ...auth,
+          body: { 
+            nccAdgroupId: adgroupId,
+            dailyBudget: body.dailyBudget 
+          },
+        });
+        return jsonResponse(result.data, result.status);
+      }
+
       // ─── 광고그룹 상세 조회 ───
       const adgroupDetailMatch = path.match(/^\/api\/adgroups\/([^/]+)$/);
       if (adgroupDetailMatch && request.method === "GET") {
@@ -207,7 +224,7 @@ export default {
         }
         const result = await callNaverApi({
           method: "GET",
-          path: `/ncc/keywords?nccAdgroupId=${adgroupId}`,
+          path: `/ncc/adkeywords?nccAdgroupId=${adgroupId}`,
           ...auth,
         });
         return jsonResponse(result.data, result.status);
